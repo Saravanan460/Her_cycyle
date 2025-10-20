@@ -1,7 +1,7 @@
 body {
     font-family: 'Inter', sans-serif;
-    background-color: #f7f4f9; /* Light lavender background */
-    color: #3f3cbb; /* Deep indigo text */
+    background-color: #f7f4f9;
+    color: #3f3cbb;
 }
 .main-container {
     max-width: 1200px;
@@ -12,7 +12,7 @@ body {
 }
 .nav-link.active {
     color: #ffffff;
-    background-color: #6c63ff; /* Vibrant purple for active link */
+    background-color: #6c63ff;
 }
 .modal-overlay {
     display: none;
@@ -34,10 +34,9 @@ body {
 }
 .accordion-content.open {
    display: block;
-   max-height: 70vh; /* Constrain height to 70% of the viewport height */
-   overflow-y: auto; /* Enable vertical scrolling if content is too long */
+   max-height: 70vh; /* Changed from 2000px */
+   overflow-y: auto; /* Added for scrolling */
 }
- /* Custom color scheme */
 .bg-primary { background-color: #f7f4f9; }
 .bg-secondary { background-color: #e8e3f2; }
 .bg-accent { background-color: #6c63ff; }
@@ -46,3 +45,6 @@ body {
 .border-accent { border-color: #6c63ff; }
 .hover-bg-accent:hover { background-color: #5850e0; }
 
+#sidenav.open {
+    transform: translateX(0);
+}

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Full Routine - Holistic Period Health</title>
+    <title>Full Routine - HerCycle</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -11,27 +11,28 @@
 </head>
 <body class="bg-primary text-primary">
 
-    <header class="bg-white shadow-md sticky top-0 z-50">
+    <div id="sidenav-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"></div>
+
+    <div id="sidenav" class="fixed top-0 left-0 h-full bg-white w-64 z-50 transform -translate-x-full transition-transform duration-300 ease-in-out">
+        <div class="p-6">
+            <a href="index.html" class="text-2xl font-bold text-accent mb-8 block"><i class="fas fa-heartbeat mr-2"></i>HerCycle</a>
+            <nav class="flex flex-col space-y-2">
+                <a href="index.html" class="nav-link px-4 py-3 rounded-full font-semibold text-lg">Home</a>
+                <a href="routine.html" class="nav-link active px-4 py-3 rounded-full font-semibold text-lg">Full Routine</a>
+                <a href="stats.html" class="nav-link px-4 py-3 rounded-full font-semibold text-lg">Stats</a>
+            </nav>
+        </div>
+    </div>
+
+    <header class="bg-white shadow-md sticky top-0 z-30">
         <div class="main-container px-4">
-            <div class="grid grid-cols-3 items-center h-20">
-                <div class="justify-self-start">
-                    <a href="index.html" class="text-2xl font-bold text-accent"><i class="fas fa-heartbeat mr-2"></i>HerCycle</a>
-                </div>
-                <nav class="hidden md:flex items-center justify-center space-x-2">
-                    <a href="index.html" class="nav-link px-4 py-2 rounded-full font-semibold">Home</a>
-                    <a href="routine.html" class="nav-link active px-4 py-2 rounded-full font-semibold">Full Routine</a>
-                    <a href="stats.html" class="nav-link px-4 py-2 rounded-full font-semibold">Stats</a>
-                </nav>
+            <div class="flex items-center justify-between h-20">
+                <button id="mobile-menu-button" class="text-2xl text-accent"><i class="fas fa-bars"></i></button>
+                <a href="index.html" class="text-2xl font-bold text-accent"><i class="fas fa-heartbeat mr-2"></i>HerCycle</a>
                 <div class="flex items-center justify-self-end">
-                    <span id="username-display" class="hidden md:block font-semibold mr-4"></span>
-                    <button id="mobile-menu-button" class="md:hidden text-2xl text-accent"><i class="fas fa-bars"></i></button>
+                    <span id="username-display" class="font-semibold"></span>
                 </div>
             </div>
-        </div>
-        <div id="mobile-menu" class="hidden md:hidden bg-white py-2">
-            <a href="index.html" class="nav-link block px-4 py-3 text-center font-semibold">Home</a>
-            <a href="routine.html" class="nav-link active block px-4 py-3 text-center font-semibold">Full Routine</a>
-            <a href="stats.html" class="nav-link block px-4 py-3 text-center font-semibold">Stats</a>
         </div>
     </header>
 
@@ -41,19 +42,16 @@
             <p class="text-lg text-gray-600 mt-2">Your complete plan to reduce period pain through consistency.</p>
         </div>
         <div id="routine-accordion-container" class="space-y-4">
-            <!-- Routine will be generated here by JS -->
-        </div>
+            </div>
 
         <div class="text-center my-12">
             <h2 class="text-3xl md:text-4xl font-bold">The 5-Day Period Plan</h2>
             <p class="text-lg text-gray-600 mt-2">Gentle movements for when you're on your period.</p>
         </div>
         <div id="period-plan-accordion-container" class="space-y-4">
-            <!-- Period plan will be generated here by JS -->
-        </div>
+            </div>
     </main>
     
     <script src="script.js"></script>
 </body>
 </html>
-
