@@ -73,11 +73,19 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('next-month-btn')?.addEventListener('click', () => { displayedDate.setMonth(displayedDate.getMonth() + 1); renderConsistencyCalendar(); });
     document.body.addEventListener('click', function(event) { const toggle = event.target.closest('.accordion-toggle'); if (toggle) { const content = toggle.nextElementSibling; const icon = toggle.querySelector('i'); content.classList.toggle('open'); icon.classList.toggle('fa-chevron-down'); icon.classList.toggle('fa-chevron-up'); }});
     
-    // --- SIDENAV LOGIC ---
+    // --- CORRECTED SIDENAV LOGIC ---
     const sidenav = document.getElementById('sidenav');
     const sidenavOverlay = document.getElementById('sidenav-overlay');
-    document.getElementById('mobile-menu-button')?.addEventListener('click', () => { sidenav.classList.add('open'); sidenavOverlay.classList.remove('hidden'); });
-    sidenavOverlay?.addEventListener('click', () => { sidenav.classList.remove('open'); sidenavOverlay.classList.add('hidden'); });
+    const mobileMenuButton = document.getElementById('mobile-menu-button'); // Get the button element
+
+    mobileMenuButton?.addEventListener('click', () => { // Check if the button exists before adding listener
+        sidenav.classList.add('open'); 
+        sidenavOverlay.classList.remove('hidden'); 
+    });
+    sidenavOverlay?.addEventListener('click', () => { // Check if the overlay exists
+        sidenav.classList.remove('open'); 
+        sidenavOverlay.classList.add('hidden'); 
+    });
 
     let isLoginMode = true;
     const formTitle = document.getElementById('form-title');
