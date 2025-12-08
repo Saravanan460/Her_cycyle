@@ -34,8 +34,8 @@ body {
 }
 .accordion-content.open {
    display: block;
-   max-height: 70vh; /* Changed from 2000px */
-   overflow-y: auto; /* Added for scrolling */
+   max-height: 70vh; 
+   overflow-y: auto; 
 }
 .bg-primary { background-color: #f7f4f9; }
 .bg-secondary { background-color: #e8e3f2; }
@@ -47,4 +47,31 @@ body {
 
 #sidenav.open {
     transform: translateX(0);
+}
+
+/* --- ACTIVE ROUTINE STYLES --- */
+.active-exercise-card {
+    border: 3px solid #6c63ff;
+    box-shadow: 0 0 15px rgba(108, 99, 255, 0.4);
+    transform: scale(1.02);
+    transition: all 0.3s ease;
+}
+
+.routine-control-panel {
+    position: sticky;
+    top: 80px; /* Below header */
+    z-index: 20;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(5px);
+    border-bottom: 2px solid #e8e3f2;
+}
+
+.pulse-red {
+    animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-red {
+    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }
