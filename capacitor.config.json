@@ -1,0 +1,12 @@
+{
+  "appId": "com.hercycle.app",
+  "appName": "HerCycle",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_icon_config_sample",
+      "iconColor": "#E07A5F"
+    }
+  }
+}

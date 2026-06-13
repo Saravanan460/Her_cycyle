@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const googleScriptUrl = 'https://script.google.com/macros/s/AKfycbwAXwtj3cjByPdhY3XfawwPRtENVamfi-EUcSW5ZAEjyLkAR1z0Y-AzksWaXAZ4N7b3/exec';
 
     // --- VOICE & ROUTINE STATE ---
-    const synth = window.speechSynthesis;
+    const synth = window.speechSynthesis || null;
     let isRoutineActive = false;
     let stopRoutineFlag = false;
     let skipToNextFlag  = false;   // set by "Next Exercise" button
@@ -21,7 +21,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- VOICE CONFIGURATION ---
     function loadVoices() {
+        if (!synth) return;
         const voices = synth.getVoices();
+        if (!voices || voices.length === 0) return;
         selectedVoice = voices.find(v => v.name.includes('Google US English')) ||
                         voices.find(v => v.name.includes('Zira')) ||
                         voices.find(v => v.name.includes('Samantha')) ||
@@ -30,14 +32,34 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     loadVoices();
-    if (speechSynthesis.onvoiceschanged !== undefined) {
-        speechSynthesis.onvoiceschanged = loadVoices;
+    if (synth && synth.onvoiceschanged !== undefined) {
+        synth.onvoiceschanged = loadVoices;
     }
 
     // --- SPEAK UTILITY ---
-    function speak(text, rate = 0.9) {
+    const TextToSpeech = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.TextToSpeech;
+    
+    async function speak(text, rate = 0.9) {
+        if (stopRoutineFlag) return 0;
+        
+        if (TextToSpeech) {
+            try {
+                const startTime = Date.now();
+                await TextToSpeech.speak({
+                    text: text,
+                    locale: 'en-US',
+                    speechRate: rate,
+                    pitchRate: 1.0,
+                    volume: 1.0
+                });
+                return Date.now() - startTime;
+            } catch (e) {
+                console.log('Capacitor TTS Error:', e);
+            }
+        }
+        
         return new Promise((resolve) => {
-            if (stopRoutineFlag) { resolve(0); return; }
+            if (!synth) { resolve(0); return; }
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.voice = selectedVoice;
             utterance.rate = rate;
@@ -69,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const timer = setInterval(() => {
                 if (stopRoutineFlag || skipToNextFlag) { clearInterval(timer); resolve(); return; }
                 current++;
-                if (current % 5 === 0) {
+                if (current % 5 === 0 && synth) {
                     synth.cancel();
                     const utt = new SpeechSynthesisUtterance(String(current));
                     utt.voice = selectedVoice;
@@ -122,21 +144,49 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- NEXT EXERCISE BUTTON HELPERS ---
-    function addNextExerciseButton(anchorBtn) {
-        removeNextExerciseButton();
+    // --- ROUTINE CONTROLS (BOTTOM BAR) ---
+    function showRoutineControlBar(originalBtn) {
+        removeRoutineControlBar();
+        const bar = document.createElement('div');
+        bar.id = 'routine-control-bar';
+        // Add pb-8 to ensure it avoids bottom navigation overlap if any
+        bar.className = 'fixed bottom-0 left-0 w-full bg-white p-4 pb-8 shadow-[0_-10px_20px_-5px_rgba(0,0,0,0.15)] z-[100] flex flex-row gap-4 justify-center items-center border-t border-gray-100 rounded-t-3xl transition-transform duration-300';
+        
+        const stopBtn = document.createElement('button');
+        stopBtn.className = 'flex-1 bg-red-500 text-white font-bold py-4 rounded-full shadow-lg pulse-red text-sm md:text-base flex justify-center items-center';
+        stopBtn.innerHTML = '<i class="fas fa-stop mr-2"></i>Stop Routine';
+        stopBtn.onclick = () => handleGlobalStop();
+
         const nextBtn = document.createElement('button');
-        nextBtn.id = 'next-exercise-btn';
+        nextBtn.className = 'flex-1 bg-yellow-400 text-gray-900 font-bold py-4 rounded-full shadow-lg hover:bg-yellow-300 active:scale-95 text-sm md:text-base flex justify-center items-center';
         nextBtn.innerHTML = '<i class="fas fa-forward-step mr-2"></i>Next Exercise';
-        nextBtn.className = 'mt-2 w-full bg-yellow-400 text-gray-900 font-bold py-3 rounded-full shadow-lg hover:bg-yellow-300 transition-transform transform active:scale-95 flex justify-center items-center';
-        nextBtn.addEventListener('click', () => {
+        nextBtn.onclick = () => {
             skipToNextFlag = true;
-            synth.cancel();
-        });
-        anchorBtn.parentNode.insertBefore(nextBtn, anchorBtn.nextSibling);
+            if (TextToSpeech) TextToSpeech.stop();
+            if (synth) synth.cancel();
+        };
+
+        bar.appendChild(stopBtn);
+        bar.appendChild(nextBtn);
+        document.body.appendChild(bar);
+
+        // Hide original button
+        if (originalBtn) {
+            originalBtn.style.display = 'none';
+            bar.dataset.originalBtnId = originalBtn.id;
+        }
     }
-    function removeNextExerciseButton() {
-        document.getElementById('next-exercise-btn')?.remove();
+
+    function removeRoutineControlBar() {
+        const bar = document.getElementById('routine-control-bar');
+        if (bar) {
+            const originalBtnId = bar.dataset.originalBtnId;
+            if (originalBtnId) {
+                const btn = document.getElementById(originalBtnId);
+                if (btn) btn.style.display = '';
+            }
+            bar.remove();
+        }
     }
 
     // --- CORE ROUTINE RUNNER ---
@@ -144,18 +194,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const btn = document.getElementById(buttonId);
         if (!btn) return;
 
-        const originalText    = btn.innerHTML;
-        const originalClasses = btn.className;
-
-        btn.innerHTML = '<i class="fas fa-stop mr-2"></i>Stop Routine';
-        btn.classList.remove('bg-accent', 'text-accent', 'bg-white');
-        btn.classList.add('bg-red-500', 'text-white', 'pulse-red');
-
         isRoutineActive = true;
         stopRoutineFlag = false;
         skipToNextFlag  = false;
 
-        addNextExerciseButton(btn);
+        showRoutineControlBar(btn);
 
         if (!selectedVoice) loadVoices();
 
@@ -334,17 +377,18 @@ document.addEventListener('DOMContentLoaded', () => {
     function resetRoutineUI(btn, text, classes) {
         stopRoutineFlag = true;
         isRoutineActive = false;
-        synth.cancel();
-        removeNextExerciseButton();
+        if (synth) synth.cancel();
+        removeRoutineControlBar();
         if (btn) { btn.innerHTML = text; btn.className = classes; }
         document.querySelectorAll('.active-exercise-card').forEach(el => el.classList.remove('active-exercise-card'));
     }
 
-    window.handleGlobalStop = function () {
+    window.handleGlobalStop = function handleGlobalStop() {
         stopRoutineFlag = true;
         isRoutineActive = false;
-        synth.cancel();
-        removeNextExerciseButton();
+        if (TextToSpeech) TextToSpeech.stop();
+        if (synth) synth.cancel();
+        removeRoutineControlBar();
         document.querySelectorAll('.active-exercise-card').forEach(el => el.classList.remove('active-exercise-card'));
     };
 
@@ -363,8 +407,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return await api.login(userId, password);
         },
         getUserData: async (userId) => {
-            const response = await fetch(`${googleScriptUrl}?action=getUserData&userId=${userId}`);
-            return response.json();
+            try {
+                const response = await fetch(`${googleScriptUrl}?action=getUserData&userId=${userId}`);
+                return await response.json();
+            } catch (e) {
+                console.error('API Error:', e);
+                return { dailyLogs: [] };
+            }
         },
         saveLog: async (userId, logData) => {
             await fetch(googleScriptUrl, {
@@ -926,12 +975,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const getTodayDateString = () => new Date().toISOString().split('T')[0];
 
     function checkAuth() {
+        let currentUser = localStorage.getItem('herCycleUser');
+        if (currentUser === 'null' || currentUser === 'undefined' || !currentUser) {
+            currentUser = null;
+        }
+
         if (!currentUser && !window.location.pathname.endsWith('login.html')) {
-            window.location.href = 'login.html';
+            window.location.replace('login.html');
+            return false;
         } else if (currentUser) {
             const usernameDisplay = document.getElementById('username-display');
             if (usernameDisplay) usernameDisplay.textContent = `Hi, ${currentUser}!`;
         }
+        return true;
     }
 
     function getOrCreateTodayLog() {
@@ -1019,12 +1075,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (routine) {
             window.homePageExercises = routine.exercises;
             container.innerHTML = `
-            <div class="sticky top-0 z-20 bg-white pb-4 pt-2 border-b border-gray-100 mb-4">
+            <div class="mb-6 pb-4 pt-2 border-b border-gray-100">
                 <h3 class="text-2xl font-bold mb-2 text-center">${periodDay ? `Period Day ${periodDay}` : 'Today\'s'} Routine: <span class="text-accent">${routine.title}</span></h3>
                 <p class="text-center text-gray-600 mb-4">${routine.goal}</p>
-                <button id="home-start-btn" class="w-full bg-accent text-white font-bold py-3 rounded-full shadow-lg hover:bg-opacity-90 transition-transform transform active:scale-95 flex justify-center items-center">
-                    <i class="fas fa-play mr-2"></i>Start Full Routine
-                </button>
+                <div class="flex flex-row w-full justify-center px-2">
+                    <button id="home-start-btn" class="w-full bg-accent text-white font-bold py-3 rounded-full shadow-lg hover:bg-opacity-90 transition-transform transform active:scale-95 flex justify-center items-center">
+                        <i class="fas fa-play mr-2"></i>Start Full Routine
+                    </button>
+                </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-20">
                 ${routine.exercises.map((ex, i) => createExerciseHTML(ex, i, 'today-routine')).join('')}
@@ -1056,12 +1114,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 <i class="fas fa-chevron-down text-xl text-accent"></i>
             </button>
             <div class="accordion-content px-6 pb-6">
-                <div class="mb-6 flex justify-center sticky top-20 z-10 bg-white py-2">
-                    <button id="${btnId}" onclick="handleRoutinePageStart('${btnId}', '${exercisesStr}', '${contextId}')" class="w-full md:w-1/2 bg-accent text-white font-bold py-2 rounded-full shadow hover:bg-opacity-90 flex justify-center items-center">
+                <div class="mb-6 flex flex-row w-full justify-center px-2">
+                    <button id="${btnId}" onclick="handleRoutinePageStart('${btnId}', '${exercisesStr}', '${contextId}')" class="w-full md:w-1/2 bg-accent text-white font-bold py-3 rounded-full shadow hover:bg-opacity-90 flex justify-center items-center">
                         <i class="fas fa-play mr-2"></i>Start Routine
                     </button>
                 </div>
-                <div class="grid grid-cols-1 gap-6">
+                <div class="grid grid-cols-1 gap-6 pb-24">
                     ${exercisesHtml}
                 </div>
             </div>
@@ -1313,35 +1371,66 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- PAGE DATA LOADERS ---
     async function loadHomePageData() {
-        const data = await api.getUserData(currentUser);
-        userData.dailyLogs = data.dailyLogs || [];
-        const todayLog = getOrCreateTodayLog();
-        if (todayLog.completed) {
-            document.getElementById('today-routine-container')?.classList.add('hidden');
-            document.getElementById('completion-button-container')?.classList.add('hidden');
-            document.getElementById('completion-card')?.classList.remove('hidden');
+        try {
+            const usernameDisplay = document.getElementById('username-display');
+            if (usernameDisplay) usernameDisplay.textContent = `Hi, ${currentUser}!`;
+
+            const data = await api.getUserData(currentUser);
+            userData.dailyLogs = data.dailyLogs || [];
+            
+            // Fix for Google Sheet returning {} instead of []
+            if (!Array.isArray(userData.dailyLogs)) {
+                userData.dailyLogs = Object.values(userData.dailyLogs);
+            }
+
+            const todayLog = getOrCreateTodayLog();
+            if (todayLog.completed) {
+                document.getElementById('today-routine-container')?.classList.add('hidden');
+                document.getElementById('completion-button-container')?.classList.add('hidden');
+                document.getElementById('completion-card')?.classList.remove('hidden');
+            }
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(today.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().split('T')[0];
+            const yesterdayLog = userData.dailyLogs.find(l => l.date === yesterdayStr);
+            if (yesterdayLog && yesterdayLog.periodCycleDay && yesterdayLog.periodCycleDay < 5) {
+                const newPeriodDay = yesterdayLog.periodCycleDay + 1;
+                if (!todayLog.periodCycleDay) { todayLog.periodCycleDay = newPeriodDay; api.saveLog(currentUser, todayLog); }
+            }
+            renderConsistencyCalendar();
+            renderTodayRoutine();
+            initializeWaterTracker();
+            initializeFoodChecklist();
+            const wm = document.getElementById('welcome-message');
+            if (wm) wm.textContent = `Ready to conquer the day, ${currentUser}!`;
+        } catch (e) {
+            console.error("Fatal error loading home data. Forcing logout.", e);
+            localStorage.removeItem('herCycleUser');
+            window.location.replace('login.html');
         }
-        const today = new Date();
-        const yesterday = new Date(today);
-        yesterday.setDate(today.getDate() - 1);
-        const yesterdayStr = yesterday.toISOString().split('T')[0];
-        const yesterdayLog = userData.dailyLogs.find(l => l.date === yesterdayStr);
-        if (yesterdayLog && yesterdayLog.periodCycleDay && yesterdayLog.periodCycleDay < 5) {
-            const newPeriodDay = yesterdayLog.periodCycleDay + 1;
-            if (!todayLog.periodCycleDay) { todayLog.periodCycleDay = newPeriodDay; api.saveLog(currentUser, todayLog); }
-        }
-        renderConsistencyCalendar();
-        renderTodayRoutine();
-        initializeWaterTracker();
-        initializeFoodChecklist();
-        document.getElementById('welcome-message').textContent = `Ready to conquer the day, ${currentUser}!`;
     }
 
     async function loadStatsPageData() {
-        const data = await api.getUserData(currentUser);
-        userData.dailyLogs = data.dailyLogs || [];
-        renderCycleHistory();
-        renderWaterIntakeChart();
+        try {
+            const usernameDisplay = document.getElementById('username-display');
+            if (usernameDisplay) usernameDisplay.textContent = `Hi, ${currentUser}!`;
+
+            const data = await api.getUserData(currentUser);
+            userData.dailyLogs = data.dailyLogs || [];
+            
+            // Fix for Google Sheet returning {} instead of []
+            if (!Array.isArray(userData.dailyLogs)) {
+                userData.dailyLogs = Object.values(userData.dailyLogs);
+            }
+
+            renderCycleHistory();
+            renderWaterIntakeChart();
+        } catch (e) {
+            console.error("Fatal error loading stats data. Forcing logout.", e);
+            localStorage.removeItem('herCycleUser');
+            window.location.replace('login.html');
+        }
     }
 
     function renderCycleHistory() {
@@ -1406,8 +1495,56 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('prev-month-btn-progress')?.addEventListener('click', () => { progressDisplayedDate.setMonth(progressDisplayedDate.getMonth() - 1); renderWaterIntakeChart(); });
     document.getElementById('next-month-btn-progress')?.addEventListener('click', () => { progressDisplayedDate.setMonth(progressDisplayedDate.getMonth() + 1); renderWaterIntakeChart(); });
 
+    async function setupNotifications() {
+        if (!window.Capacitor || !window.Capacitor.Plugins || !window.Capacitor.Plugins.LocalNotifications) {
+            console.log('Local notifications not available (not running in Capacitor app)');
+            return;
+        }
+
+        try {
+            const LocalNotifications = window.Capacitor.Plugins.LocalNotifications;
+            
+            let permStatus = await LocalNotifications.checkPermissions();
+            if (permStatus.display !== 'granted') {
+                permStatus = await LocalNotifications.requestPermissions();
+            }
+            if (permStatus.display !== 'granted') return;
+
+            await LocalNotifications.cancel({ notifications: [{ id: 1 }, { id: 2 }] });
+
+            await LocalNotifications.schedule({
+                notifications: [
+                    {
+                        title: 'Hydration Time! 💧',
+                        body: 'Take a moment to drink a glass of water to nourish your body.',
+                        id: 1,
+                        schedule: { on: { minute: 0 }, repeats: true }
+                    },
+                    {
+                        title: 'Evening Wellness Check 🌿',
+                        body: 'Have you finished your routine and nutrition checklist today?',
+                        id: 2,
+                        schedule: { on: { hour: 18, minute: 0 }, repeats: true }
+                    }
+                ]
+            });
+            console.log('Push Notifications scheduled successfully!');
+        } catch (e) {
+            console.error('Failed to schedule notifications:', e);
+        }
+    }
+
+    document.querySelectorAll('#logout-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            localStorage.removeItem('herCycleUser');
+            window.location.replace('login.html');
+        });
+    });
+
     // --- BOOT ---
-    checkAuth();
+    if (!checkAuth()) return;
+    setupNotifications();
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
     if      (currentPage.includes('index.html'))   { loadHomePageData(); }
     else if (currentPage.includes('stats.html'))   { loadStatsPageData(); }

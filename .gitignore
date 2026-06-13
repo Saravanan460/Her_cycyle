@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Capacitor / Android Build Folders
+android/
+www/
+
+# IDE / Editor
+.vscode/
+
+# Accidental PowerShell artifacts
+-ErrorAction/
+-Recurse/
+SilentlyContinue/
+copy/
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,28 @@
+{
+  "name": "her_cycyle",
+  "version": "1.0.0",
+  "description": "",
+  "main": "script.js",
+  "scripts": {
+    "build": "mkdir www -ErrorAction SilentlyContinue; copy *.html www\\; copy *.css www\\; copy *.js www\\; copy -Recurse images www\\"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Saravanan460/Her_cycyle.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Saravanan460/Her_cycyle/issues"
+  },
+  "homepage": "https://github.com/Saravanan460/Her_cycyle#readme",
+  "dependencies": {
+    "@capacitor-community/text-to-speech": "^8.0.1",
+    "@capacitor/android": "^8.4.0",
+    "@capacitor/cli": "^8.4.0",
+    "@capacitor/core": "^8.4.0",
+    "@capacitor/local-notifications": "^8.2.0"
+  }
+}
