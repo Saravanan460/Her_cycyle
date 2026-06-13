@@ -1381,7 +1381,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         const labels = Array.from({ length: daysInMonth }, (_, i) => i + 1);
         const dataPoints = Array(daysInMonth).fill(null);
-        let pointBackgroundColors = Array(daysInMonth).fill('rgba(54, 162, 235, 0.6)');
+        let pointBackgroundColors = Array(daysInMonth).fill('rgba(129, 178, 154, 0.8)');
         let totalWater = 0, loggedDays = 0, lowestIntake = 14;
         monthlyLogs.forEach(log => {
             const dayOfMonth = new Date(log.date).getUTCDate();
@@ -1391,14 +1391,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (water > 0) loggedDays++;
             if (water < lowestIntake) lowestIntake = water;
         });
-        for (let i = 0; i < dataPoints.length; i++) { if (dataPoints[i] === lowestIntake && loggedDays > 0) { pointBackgroundColors[i] = 'rgba(255, 99, 132, 1)'; } }
+        for (let i = 0; i < dataPoints.length; i++) { if (dataPoints[i] === lowestIntake && loggedDays > 0) { pointBackgroundColors[i] = 'rgba(224, 122, 95, 1)'; } }
         const avgGlasses = loggedDays > 0 ? (totalWater / loggedDays) : 0;
         const avgLiters  = (avgGlasses * 0.25).toFixed(1);
         statsEl.innerHTML = `<div class="bg-secondary p-4 rounded-lg"><p class="text-gray-600">Avg. Daily Intake</p><p class="font-bold text-2xl text-accent">${avgLiters} L</p></div><div class="bg-secondary p-4 rounded-lg"><p class="text-gray-600">Lowest Intake</p><p class="font-bold text-2xl text-red-500">${loggedDays > 0 ? lowestIntake : 'N/A'} glasses</p></div>`;
         if (waterChartInstance) { waterChartInstance.destroy(); }
         waterChartInstance = new Chart(canvasEl, {
             type: 'line',
-            data: { labels, datasets: [{ label: 'Glasses of Water', data: dataPoints, borderColor: 'rgba(54, 162, 235, 1)', backgroundColor: pointBackgroundColors, fill: false, tension: 0.1, spanGaps: true }] },
+            data: { labels, datasets: [{ label: 'Glasses of Water', data: dataPoints, borderColor: 'rgba(129, 178, 154, 1)', backgroundColor: pointBackgroundColors, fill: false, tension: 0.2, spanGaps: true }] },
             options: { scales: { y: { beginAtZero: true, max: 14 } }, plugins: { legend: { display: false } } }
         });
     }
